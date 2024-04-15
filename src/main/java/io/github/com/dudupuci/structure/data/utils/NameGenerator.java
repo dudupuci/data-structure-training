@@ -1,7 +1,5 @@
 package io.github.com.dudupuci.structure.data.utils;
 
-import io.github.com.dudupuci.structure.data.Main;
-
 import java.util.List;
 import java.util.Random;
 

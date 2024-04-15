@@ -1,71 +1,60 @@
 package io.github.com.dudupuci.structure.data;
 
-import io.github.com.dudupuci.structure.data.entities.Person;
-import io.github.com.dudupuci.structure.data.enums.Priority;
+import io.github.com.dudupuci.structure.data.entities.Child;
 import io.github.com.dudupuci.structure.data.utils.NameGenerator;
-import io.github.com.dudupuci.structure.data.utils.PasswordGenerator;
-import io.github.com.dudupuci.structure.data.utils.PriorityGenerator;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
+import java.util.*;
+
 
 public class Main {
-    private static final Logger logger = Logger.getLogger(Main.class.getName());
 
     public static void main(String[] args) throws InterruptedException {
-        LinkedList<Person> persons = new LinkedList<>();
-        ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+        LinkedList<Child> children = new LinkedList<>();
+        Scanner scanner = new Scanner(System.in);
 
-        for (int i = 0; i < 6; i++) {
-            persons.add(new Person(NameGenerator.generate(), PriorityGenerator.generate(), PasswordGenerator.generate()));
+        System.out.print("Quantas criancas vão brincar?");
+        int childrenSize = scanner.nextInt();
+
+        for (int i = 0; i <= childrenSize; i++) {
+            children.add(new Child(NameGenerator.generate()));
         }
 
-        logger.info("Adicionando pessoas a fila");
 
-        do {
-            var priorityPersons = new ArrayList<>(persons.stream().filter(person -> person.getPriority() == Priority.RED).toList());
+        var chosenChild = chooseChildToSpeak(children);
+        System.out.println("A crianca que vai gritar é a " + chosenChild.getName() + ", ele não vai brincar, só gritar!");
+        children.remove(chosenChild);
 
-            if (!priorityPersons.isEmpty()) {
-                for (Person priorityPerson : priorityPersons) {
-                    logger.info("Atendendo pessoa prioritária: " + priorityPerson.getName());
-                    persons.remove(priorityPerson);
+        var playing = children.stream().map(Child::getName).toList();
+        System.out.println("Quem está jogando é " + playing);
 
-                    executor.schedule(() -> {
-                        persons.add(new Person(NameGenerator.generate(), PriorityGenerator.generate(), PasswordGenerator.generate()));
-                        checkIfPersonNeedsPriority(persons.peekLast(), priorityPersons);
-                        logger.info("Nova pessoa entrando no consultório..." + persons.peekLast());
-                    }, 4, TimeUnit.SECONDS);
+        Iterator<Child> iterator = children.iterator();
 
-                    Thread.sleep(5000);
-                    logger.info("Consulta com " + priorityPerson.getName() + " finalizada.");
+        while (children.size() > 1) {
+            while (iterator.hasNext()) {
+                Child currentChild = iterator.next();
+                System.out.println(chosenChild.getName() + " diz " + chosenChild.talkHotPotato());
+                Thread.sleep(500);
+
+                if (isHotPotatoBurned()) {
+                    System.out.println(chosenChild.burn(currentChild));
+                    iterator.remove();
                 }
             }
+            iterator = children.iterator();
+        }
 
-            var nextPerson = persons.peekFirst();
-            assert nextPerson != null;
-
-            logger.info("Atendendo proximo paciente: " + nextPerson.getName());
-            persons.remove(nextPerson);
-
-            executor.schedule(() -> {
-                persons.add(new Person(NameGenerator.generate(), PriorityGenerator.generate(), PasswordGenerator.generate()));
-                checkIfPersonNeedsPriority(persons.peekLast(), priorityPersons);
-                logger.info("Nova pessoa entrando no consultório..." + persons.peekLast());
-            }, 4, TimeUnit.SECONDS);
-
-            Thread.sleep(5000);
-            logger.info("Consulta com " + nextPerson.getName() + " finalizada.");
-
-        } while (true);
+        System.out.println("---------------------");
+        System.out.println("Winner: " + children.getFirst());
+        System.out.println("---------------------");
     }
 
-    private static void checkIfPersonNeedsPriority(final Person person, ArrayList<Person> list) {
-        if (person.getPriority() == Priority.RED) {
-            list.add(person);
-        }
+    private static Child chooseChildToSpeak(LinkedList<Child> children) {
+        var random = new Random();
+        var index = random.nextInt(children.size());
+        return children.get(index);
+    }
+
+    private static boolean isHotPotatoBurned() {
+        return Math.random() < 0.5;
     }
 }
